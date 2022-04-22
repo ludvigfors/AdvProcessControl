@@ -22,19 +22,22 @@ X2 = [eye(7), zeros(7,3);
 [eigVec, eigVal] = eig(X1, X2);
 
 % Verification
-v1 = eigVec(:,1); % Initital state
+index = 4;
+v1 = eigVec(:,index); % Initital state
 M1 = [eye(7), zeros(7,3); 
       zeros(3, 7) zeros(3,3)];
 M2 = [-A -B;C D];
-% eigVal(1) is the transmission zero
-M = eigVal(1)*M1 + M2;
 
+% eigVal(1) is the transmission zero
+trzero = Z(index);
+
+M = trzero*M1 + M2;
 y = M*v1; % y is zero so correct
 
 %% e)
 % Some zeros are the same as in a) and c)
 
-[sys_num, sys_den] = ss2tf(A,B,C,D, 3);
+[sys_num, sys_den] = ss2tf(A,B,C,D, 1);
 sys_first_out = sys_num(1,:);
 
 sys_G11 = tf(sys_first_out, sys_den);
@@ -66,7 +69,7 @@ t2 = B' * U2;
 
 
 %% b)
-% Controlability matrix test -> Non observable since rank(O_M) != n
+% Observability matrix test -> Non observable since rank(O_M) != n
 O_M = [C; C*A; C*A^2; C*A^3; C*A^4; C*A^5; C*A^6];
 r2 = rank(O_M);
 
@@ -107,30 +110,49 @@ sys = ss(sys_tf);
 sys_con = canon(sys);
 sys_obs = canon(sys, "companion");
 
-% PBH test -> Not Controlable since some left eigenvectors of A are orthogonal to B.
-%[U1,S1,VT] = svd(A);
-[U2, S2] = eig(sys_con.A);
-
 A = sys_con.A;
 B = sys_con.B;
 C = sys_con.C;
 
+
+% Test Controlability
+% Controlability matrix test -> Sucess
 C_M = [B A*B];
 r1 = rank(C_M);
 
-tcon = sys_con.B' * U2;
+% PBH test -> Controlable since no left eigenvectors of A are orthogonal to B.
+[U2, S2] = eig(A');
+tcon2 = B' * U2;
 
-% Controlability matrix test -> Non observable since rank(O_M) != n
+
+% Test Observability
+
+A = sys_obs.A;
+B = sys_obs.B;
+C = sys_obs.C;
+
+% Observability matrix test 
 O_M = [C; C*A];
 r2 = rank(O_M);
 
-
-
+% PBH test -> Observable since no right eigenvectors of A are orthogonal to C.
+[U3, S3] = eig(A);
+tcon3 = C * U3;
 
 % b)
+% No values of "a" makes the system uncontrolable or unobservable
+% YOU SHOULD PROVE THIS!!!
 
 % c)
+% Not really. You should convert the transfer function to state space form
+% and do controlability/observability matrix tests.
 
 % d)
+% Nothing changes, because you just use the transformation to transform
+% back to the original space, use the original matrices and then transform
+% to the new space again (e.g A_new = T^-1AT, x = T*x_new)
 
-% e) 
+% e)
+% Since no values of "a" changes the fact that the system is controlable
+% and observable -> shows the properties of transformation invariance of 
+% controlability and observability.
