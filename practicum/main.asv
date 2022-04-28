@@ -78,7 +78,22 @@ Q = [0.25 0 0 0;
 
 R = 0.003;
 
-[K, S, CLP] = lqr(sys, Q, R)
+[K, S, CLP] = lqr(sys, Q, R);
+% C = eye(4);
+t = 0:0.001:10;
+
+imp = [0 0.01 0 0]';
+Reg_sys = ss(A-B*K,B*K*imp,C,D);
+
+
+
+
+% initial(Reg_sys,[0 15*pi/180 0 0])
+impulse(Reg_sys)
+step(Reg_sys)
+pzmap(Reg_sys)
+
+
 
 
 
