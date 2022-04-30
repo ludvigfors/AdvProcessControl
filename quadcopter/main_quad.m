@@ -33,7 +33,9 @@ omega_x = 0;
 omega_y = 0;
 omega_z = 0;
 
-a = [0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0;
+%[x y z vx vy vz φ θ ψ ωx ωy ωz ]
+
+jacobian = [0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0;
      0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0;
      0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0;
      0 0 0 -kd/m 0 0 k*cm/m*(sin(psi)*cos(phi)-cos(psi)*sin(phi)*sin(theta))*(u(1)+u(2)+u(3)+u(4)) k*cm/m*(cos(psi)*cos(phi)*cos(theta))*(u(1)+u(2)+u(3)+u(4)) k*cm/m*(cos(psi)*sin(phi) - sin(psi)*cos(phi)*sin(theta))*(u(1)+u(2)+u(3)+u(4)) 0 0 0 k*cm/m*(sin(psi)*sin(phi)+cos(psi)*cos(phi)*sin(theta)) k*cm/m*(sin(psi)*sin(phi)+cos(psi)*cos(phi)*sin(theta)) k*cm/m*(sin(psi)*sin(phi)+cos(psi)*cos(phi)*sin(theta)) k*cm/m*(sin(psi)*sin(phi)+cos(psi)*cos(phi)*sin(theta));
@@ -45,3 +47,12 @@ a = [0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0;
      0 0 0 0 0 0 0 0 0 0 -(Iyy-Izz)/Ixx*omega_z -(Iyy-Izz)/Ixx*omega_y L*k*cm/Ixx 0 -L*k*cm/Ixx 0;
      0 0 0 0 0 0 0 0 0 -(Izz-Ixx)/Iyy*omega_z 0 -(Izz-Ixx)/Iyy*omega_x 0 L*k*cm/Iyy 0 -L*k*cm/Iyy;
      0 0 0 0 0 0 0 0 0 -(Ixx-Iyy)/Izz*omega_y -(Ixx-Iyy)/Izz*omega_x 0 b*cm/Izz -b*cm/Izz b*cm/Izz -b*cm/Izz];
+
+A = jacobian(1:12,1:12);
+B = jacobian(1:12,13:16);
+C = [eye(3) zeros(3,9);
+    zeros(3,6) eye(3) zeros(3,3)];
+D = zeros(6,4);
+
+
+
