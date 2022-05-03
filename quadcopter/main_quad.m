@@ -1,3 +1,9 @@
+%% Clear workspace
+clear all
+close all
+clc
+
+%% Load data
 load references_09.mat
 
 % given parameters of the quadcopter model
@@ -54,5 +60,58 @@ C = [eye(3) zeros(3,9);
     zeros(3,6) eye(3) zeros(3,3)];
 D = zeros(6,4);
 
+Ts = 0.05;
+
+%% Discretization using zero on hold (A not invertable -> pseudo inverse)
+Az = expm(A*Ts);
+Bz = pinv(A)*(expm(A*Ts) - eye(12))*B;
+Cz = C;
+Dz = D;
+
+% G_DT_3 = tf(ss(Az,Bz,Cz,Dz,Ts))
+
+% Alternatively (shortcut)
+% G_DT_4 = c2d(G,Ts,"zoh")
+
+Ad = Az;
+Bd = Bz;
+Cd = Cz;
+Dd = Dz;
 
 
+%% Plot step response
+step(ss(A,B,C,D), ss(Ad,Bd,Cd,Dd,Ts));
+legend show;
+
+
+%% Open Loop analysis
+sys = ss(Ad,Bd,Cd,Dd,Ts);
+
+% Stable
+fprintf("Poles of the system");
+pole(sys)
+
+fprintf("Transmission zeros of the system");
+[Z, NRK] = tzero(sys);
+Z
+
+fprintf("No transmission zeros\n\n");
+
+% Controlability
+C_M = [B Ad*Bd Ad^2*B Ad^3*Bd];
+fprintf("Rank of the controlability matrix (n=12)");
+rank(C_M)
+
+% Observability
+O_M = [Cd; Cd*Ad; Cd*Ad^2; Cd*Ad^3];
+fprintf("Rank of the observability matrix (n=12)");
+rank(O_M)
+
+% Detetectability
+% System is detectable since the system is fully observable.
+
+% Stabilizable
+% System is stabilizable since the system is fully controllable.
+
+% Minimal
+% Minimal since the system is both controlable and observable.
