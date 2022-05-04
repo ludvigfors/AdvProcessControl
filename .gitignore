@@ -1,5 +1,6 @@
-
-*/slprj/*
+slprj/
 *.asv
 
 quadcopter/simulink_ex.pptx
+
+*.slxc

@@ -11,6 +11,10 @@ m = 0.210; % Kg
 r = 0.635e-2; % m
 g = 9.81; % m/s^2
 
+% Define simulation variables
+Ts = 0.05; % seconds, corresponding to 200Hz
+Wc = 2*2*pi; % rad/s, cutoff frequency of low pass filter
+
 % Define State Space matrices
 A = [0 0 1 0;
      0 0 0 1;
@@ -76,20 +80,31 @@ Q = [0.25 0 0 0;
      0 0 0 0;
      0 0 0 0];
 
-R = 0.003;
+Q_alt = [0.25 0 0 0;
+         0 1 0 0;
+         0 0 0 0;
+         0 0 0 0];
 
+R = 0.003;
+R_alt = 0.001;
+
+x_initial = [0 0 0 0]';
 [K, S, CLP] = lqr(sys, Q, R);
+[K_alt,~,~] = lqr(sys,Q_alt,R_alt);
 % C = eye(4);
 t = 0:0.001:10;
 
 imp = [0 0.01 0 0]';
-Reg_sys = ss(A-B*K,B*K*imp,C,D);
+Reg_sys = ss(A-B*K,-B*K*imp,C,D);
 
-
+%% Testing
 % initial(Reg_sys,[0 15*pi/180 0 0])
-impulse(Reg_sys)
-step(Reg_sys)
-pzmap(Reg_sys)
+% figure("Name","Pole/zero map")
+% pzmap(Reg_sys)
+% figure("Name","Step response")
+% step(Reg_sys)
+% figure("Name","Impulse response")
+% impulse(Reg_sys)
 
 
 
