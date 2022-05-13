@@ -1,2 +1,0 @@
-    template_inverted_pendulum_2021b.c
-
