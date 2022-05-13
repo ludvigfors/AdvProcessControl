@@ -12,7 +12,7 @@ r = 0.635e-2; % m
 g = 9.81; % m/s^2
 
 % Define simulation variables
-Ts = 0.05; % seconds, corresponding to 200Hz
+Ts = 0.005; % seconds, corresponding to 200Hz
 Wc = 2*2*pi; % rad/s, cutoff frequency of low pass filter
 
 % Define State Space matrices
