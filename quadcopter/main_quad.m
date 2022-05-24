@@ -80,12 +80,19 @@ Dd = Dz;
 
 
 %% Plot step response
-step(ss(A,B,C,D), ss(Ad,Bd,Cd,Dd,Ts));
+sys_c = ss(A,B,C,D);
+sys_d = ss(Ad,Bd,Cd,Dd,Ts);
+
+% Get system for output 2, input 3
+sys_c_23 = sys_c(2,3);
+sys_d_23 = sys_d(2,3);
+step(sys_c_23, sys_d_23);
 legend show;
+grid on;
 
 
 %% Open Loop analysis
-sys = ss(Ad,Bd,Cd,Dd,Ts);
+sys = sys_d;
 
 % Stable
 fprintf("Poles of the system");
@@ -115,3 +122,51 @@ rank(O_M)
 
 % Minimal
 % Minimal since the system is both controlable and observable.
+
+% Transmission zeros
+fprintf("Rank of the observability matrix (n=12)");
+Z = tzero(sys);
+
+% Z is empty so no transmission zeros.
+% 
+
+%% Compute matrices Nx and Nu
+% Nx maps steady state y to x
+% Nu maps steady state y to u
+
+%number of states     
+nx = 12;
+%number of inputs
+nu = 4;
+%number of outputs
+ny = 6;
+
+big_A = [Ad-eye(nx,nx) Bd;
+         Cd Dd];
+
+big_Y = [zeros(nx,ny);
+         eye(ny,ny)];
+
+big_N = big_A \ big_Y;
+
+Nx = big_N(1:nx,:);
+Nu = big_N(nx+1:end,:);
+
+%% LQR Control
+Q = eye(nx,nx)*0.25;
+%Q(1,1) = 1;
+%Q(2,2) = 1;
+Q(3,3) = 1;
+R = eye(nu,nu);
+
+[K, S, CLP] = dlqr(Ad,Bd,Q,R);
+
+%%
+r0 = zeros(ny,1);
+r1 = r0;
+r1(1)=1;
+r1(2)=1;
+r1(3)=1;
+
+
+
