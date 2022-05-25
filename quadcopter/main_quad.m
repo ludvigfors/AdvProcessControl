@@ -86,9 +86,9 @@ sys_d = ss(Ad,Bd,Cd,Dd,Ts);
 % Get system for output 2, input 3
 sys_c_23 = sys_c(2,3);
 sys_d_23 = sys_d(2,3);
-step(sys_c_23, sys_d_23);
-legend show;
-grid on;
+%step(sys_c_23, sys_d_23);
+%legend show;
+%grid on;
 
 
 %% Open Loop analysis
@@ -149,23 +149,24 @@ Nu = big_N(nx+1:end,:);
 %% LQR Control
 
 
-Q = eye(nx,nx);
+Q = eye(nx,nx) * 1;
 Q(1,1) = 1;
 Q(2,2) = 1;
-Q(3,3) = 20;
-Q(4,4) = 1/6;
-Q(5,5) = 1/6;
-Q(6,6) = 1/6;
+Q(3,3) = 5;
 
-R = eye(nu,nu) / 100;
+%Q(4,4) = 10;
+%Q(5,5) = 10;
+%Q(6,6) = 10;
+
+R = eye(nu,nu) * 0.001;
 
 [K, S, CLP] = dlqr(Ad,Bd,Q,R);
 
 %%
 r0 = zeros(ny,1);
 r1 = r0;
-r1(1) = 1;
-r1(2) = 1;
+r1(1) = 2;
+r1(2) = 2;
 r1(3)= 1;
 
 
