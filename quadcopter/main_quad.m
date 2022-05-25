@@ -42,8 +42,8 @@ omega_z = 0;
 %[x y z vx vy vz φ θ ψ ωx ωy ωz ]
 
 jacobian = [0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0;
-     0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0;
-     0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0;
+            0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0;
+            0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0;
      0 0 0 -kd/m 0 0 k*cm/m*(sin(psi)*cos(phi)-cos(psi)*sin(phi)*sin(theta))*(u(1)+u(2)+u(3)+u(4)) k*cm/m*(cos(psi)*cos(phi)*cos(theta))*(u(1)+u(2)+u(3)+u(4)) k*cm/m*(cos(psi)*sin(phi) - sin(psi)*cos(phi)*sin(theta))*(u(1)+u(2)+u(3)+u(4)) 0 0 0 k*cm/m*(sin(psi)*sin(phi)+cos(psi)*cos(phi)*sin(theta)) k*cm/m*(sin(psi)*sin(phi)+cos(psi)*cos(phi)*sin(theta)) k*cm/m*(sin(psi)*sin(phi)+cos(psi)*cos(phi)*sin(theta)) k*cm/m*(sin(psi)*sin(phi)+cos(psi)*cos(phi)*sin(theta));
      0 0 0 0 -kd/m 0 k*cm/m*(-sin(phi)*sin(psi)*sin(theta)-cos(psi)*cos(phi))*(u(1)+u(2)+u(3)+u(4)) k*cm/m*(cos(phi)*sin(psi)*cos(theta))*(u(1)+u(2)+u(3)+u(4)) k*cm/m*(cos(phi)*cos(psi)*sin(theta)+sin(psi)*sin(phi))*(u(1)+u(2)+u(3)+u(4)) 0 0 0 k*cm/m*(cos(phi)*sin(psi)*sin(theta)-cos(psi)*sin(phi)) k*cm/m*(cos(phi)*sin(psi)*sin(theta)-cos(psi)*sin(phi)) k*cm/m*(cos(phi)*sin(psi)*sin(theta)-cos(psi)*sin(phi)) k*cm/m*(cos(phi)*sin(psi)*sin(theta)-cos(psi)*sin(phi));
      0 0 0 0 0 -kd/m k*cm/m*(-cos(theta)*sin(phi))*(u(1)+u(2)+u(3)+u(4)) k*cm/m*(-sin(theta)*cos(phi))*(u(1)+u(2)+u(3)+u(4)) 0 0 0 0 k*cm/m*(cos(theta)*cos(phi)) k*cm/m*(cos(theta)*cos(phi)) k*cm/m*(cos(theta)*cos(phi)) k*cm/m*(cos(theta)*cos(phi));
@@ -123,12 +123,6 @@ rank(O_M)
 % Minimal
 % Minimal since the system is both controlable and observable.
 
-% Transmission zeros
-fprintf("Rank of the observability matrix (n=12)");
-Z = tzero(sys);
-
-% Z is empty so no transmission zeros.
-% 
 
 %% Compute matrices Nx and Nu
 % Nx maps steady state y to x
@@ -141,8 +135,8 @@ nu = 4;
 %number of outputs
 ny = 6;
 
-big_A = [Ad-eye(nx,nx) Bd;
-         Cd Dd];
+big_A = [A-eye(nx,nx) B;
+         C D];
 
 big_Y = [zeros(nx,ny);
          eye(ny,ny)];
@@ -153,20 +147,26 @@ Nx = big_N(1:nx,:);
 Nu = big_N(nx+1:end,:);
 
 %% LQR Control
-Q = eye(nx,nx)*0.25;
-%Q(1,1) = 1;
-%Q(2,2) = 1;
-Q(3,3) = 1;
-R = eye(nu,nu);
+
+
+Q = eye(nx,nx);
+Q(1,1) = 1;
+Q(2,2) = 1;
+Q(3,3) = 20;
+Q(4,4) = 1/6;
+Q(5,5) = 1/6;
+Q(6,6) = 1/6;
+
+R = eye(nu,nu) / 100;
 
 [K, S, CLP] = dlqr(Ad,Bd,Q,R);
 
 %%
 r0 = zeros(ny,1);
 r1 = r0;
-r1(1)=1;
-r1(2)=1;
-r1(3)=1;
+r1(1) = 1;
+r1(2) = 1;
+r1(3)= 1;
 
 
 
