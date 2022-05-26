@@ -148,7 +148,6 @@ Nu = big_N(nx+1:end,:);
 
 %% LQR Control
 
-
 Q = eye(nx,nx) * 1;
 Q(1,1) = 1;
 Q(2,2) = 1;
@@ -162,12 +161,53 @@ R = eye(nu,nu) * 0.001;
 
 [K, S, CLP] = dlqr(Ad,Bd,Q,R);
 
-%%
+%% Setpoint
 r0 = zeros(ny,1);
 r1 = r0;
-r1(1) = 2;
-r1(2) = 2;
-r1(3)= 1;
+r1(1) = 0.3;
+r1(2) = 0.3;
+r1(3)= 0.3;
+
+%% LQR with integral action
+%Constructing the Augmented system
+%NA = [ eye(ny,ny)  -Cd
+%       zeros(nx,ny)  Ad];
+
+int_a = [eye(3) zeros(3);
+         zeros(3) zeros(3)];
+
+NA = [ int_a Cd;
+       zeros(nx,ny) Ad];
+
+NB = [ Dd
+       Bd];
+
+%checking the controlabillity of the Augmented system
+disp('Rank of the controllability matrix of the augmented system:');
+rank(ctrb(NA,NB))
+
+%%
+Q = eye(nx+ny) * 0.01;
+Q(1,1) = 2;
+Q(2,2) = 2;
+Q(3,3) = 1;
+
+%Q(4,4) = 10;
+%Q(5,5) = 10;
+%Q(6,6) = 10;
+
+R = eye(nu) * 0.0001;
+
+[full_K, S, CLP] = dlqr(NA,NB,Q,R);
+
+%computing the feedback matrix of the augmented system
+%full_K = place(NA,NB,[cl_poles;-2; -2.1] );
+
+Ki = full_K(:,1:ny);
+Ks = full_K(:,ny+1:end);
+
+
+
 
 
 
