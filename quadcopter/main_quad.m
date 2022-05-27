@@ -124,9 +124,7 @@ rank(O_M)
 % Minimal since the system is both controlable and observable.
 
 
-%% Compute matrices Nx and Nu
-% Nx maps steady state y to x
-% Nu maps steady state y to u
+%% Define variables
 
 %number of states     
 nx = 12;
@@ -134,6 +132,23 @@ nx = 12;
 nu = 4;
 %number of outputs
 ny = 6;
+
+
+%% Setpoint
+r0 = zeros(ny,1);
+r1 = r0;
+r1(1) = 1;
+r1(2) = 1;
+r1(3)= 1;
+
+%% LQR Control (without integrat action)
+
+% Compute matrices Nx and Nu
+
+% Nx maps steady state y to x
+% Nu maps steady state y to u
+
+
 
 big_A = [A-eye(nx,nx) B;
          C D];
@@ -146,37 +161,29 @@ big_N = big_A \ big_Y;
 Nx = big_N(1:nx,:);
 Nu = big_N(nx+1:end,:);
 
-%% LQR Control
-
+% Define LQR matrices Q and R
 Q = eye(nx,nx) * 1;
 Q(1,1) = 1;
 Q(2,2) = 1;
 Q(3,3) = 5;
 
-%Q(4,4) = 10;
-%Q(5,5) = 10;
-%Q(6,6) = 10;
-
 R = eye(nu,nu) * 0.001;
 
+% Compute K for system
 [K, S, CLP] = dlqr(Ad,Bd,Q,R);
 
-%% Setpoint
-r0 = zeros(ny,1);
-r1 = r0;
-r1(1) = 0.3;
-r1(2) = 0.3;
-r1(3)= 0.3;
 
-%% LQR with integral action
-%Constructing the Augmented system
-%NA = [ eye(ny,ny)  -Cd
-%       zeros(nx,ny)  Ad];
+%% QR Control (with integral action)
 
-int_a = [eye(3) zeros(3);
+% Constructing the Augmented system
+
+% Define the integrators
+% First 3 diagonal entries = 1 -> 3 integrators for x,y and z respectivly
+int_mat = [eye(3) zeros(3);
          zeros(3) zeros(3)];
 
-NA = [ int_a Cd;
+% Create the augmented system (see slides on reference tracking)
+NA = [ int_mat Cd;
        zeros(nx,ny) Ad];
 
 NB = [ Dd
@@ -186,25 +193,25 @@ NB = [ Dd
 disp('Rank of the controllability matrix of the augmented system:');
 rank(ctrb(NA,NB))
 
-%%
-Q = eye(nx+ny) * 0.01;
-Q(1,1) = 2;
-Q(2,2) = 2;
-Q(3,3) = 1;
 
-%Q(4,4) = 10;
-%Q(5,5) = 10;
-%Q(6,6) = 10;
+%%
+% Define LQR matrices Q and R
+Q = eye(nx+ny) * 0.01;
+Q(1,1) = 5;
+Q(2,2) = 5;
+Q(3,3) = 5;
 
 R = eye(nu) * 0.0001;
 
+% Compute K for augmented system
 [full_K, S, CLP] = dlqr(NA,NB,Q,R);
 
-%computing the feedback matrix of the augmented system
-%full_K = place(NA,NB,[cl_poles;-2; -2.1] );
-
+% Get K gain for the augmented state vector (y-r error)
 Ki = full_K(:,1:ny);
+
+% Get K gain for original state x
 Ks = full_K(:,ny+1:end);
+
 
 
 
