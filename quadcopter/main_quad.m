@@ -344,3 +344,33 @@ L=Ad*M;
 
 %% 4.5 State feedback design via Pole Placement
 
+% Compute K for system
+G = rand(4,5);
+
+eig1 = [ -3 1; 
+        -1 -3];
+eig2 = [-2 -1; 
+         1 -2];
+eig_1 = -1;
+
+Lambda = blkdiag(eig1,eig2,eig_1);
+
+% Solve sylvester equation for MIMO systems
+X = lyap(Ad,-Lambda,-Bd*G);
+K = G/X;
+
+
+%% Compute L
+G_e = rand(6,1);
+eig1 = -2;
+
+Lambda_e = blkdiag(eig1);
+
+% Solve sylvester equation for MIMO systems
+X1 = lyap(Ad',-Lambda_e,-Cd'*G_e);
+L = (G_e/X1)';
+
+% Alternative way to calculate L
+cl_poles = [-2,-3,-4,-5,-6,-7,-8,-9,-10, -11, -12, -13];
+L_alt = place(Ad',Cd',cl_poles)';
+
