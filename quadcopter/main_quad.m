@@ -141,13 +141,132 @@ r1(1) = 1;
 r1(2) = 1;
 r1(3)= 1;
 
-%% LQR Control (without integrat action)
+
+%% LQR Control (without payload)
+
+%% LQR Control (without integral action)
 
 % Compute matrices Nx and Nu
 
 % Nx maps steady state y to x
 % Nu maps steady state y to u
 
+
+big_A = [Ad-eye(nx,nx) Bd;
+         Cd Dd];
+
+big_Y = [zeros(nx,ny);
+         eye(ny,ny)];
+
+big_N = big_A \ big_Y;
+
+Nx = big_N(1:nx,:);
+Nu = big_N(nx+1:end,:);
+
+% Define LQR matrices Q and R
+Q = eye(nx,nx) * 0.001;
+
+R = eye(nu,nu) * 0.0001;
+
+% Compute K for system
+[K, S, CLP] = dlqr(Ad,Bd,Q,R);
+
+
+%% LQR Control (with integral action)
+
+% Constructing the Augmented system
+
+% Define the integrators
+% First 3 diagonal entries = 1 -> 3 integrators for x,y and z respectivly
+int_mat = [eye(3) zeros(3);
+         zeros(3) zeros(3)];
+
+% Define the integrator gain Kint
+Kint = 6;
+
+% Create the augmented system (see slides on reference tracking)
+NA = [ int_mat Cd;
+       zeros(nx,ny) Ad];
+
+NB = [ Dd
+       Bd];
+
+%checking the controlabillity of the Augmented system
+disp('Rank of the controllability matrix of the augmented system:');
+rank(ctrb(NA,NB))
+
+
+%%
+% Define LQR matrices Q and R
+Q = eye(nx+ny);
+Q(1,1) = 500;
+Q(2,2) = 500;
+Q(3,3) = 10;
+Q(16,16) = 10;
+Q(17,17) = 10;
+Q(18,18) = 10;
+
+
+R = eye(nu) * 0.01;
+
+% Compute K for augmented system
+[full_K, S, CLP] = dlqr(NA,NB,Q,R);
+
+% Get K gain for the augmented state vector (y-r error)
+Ki = full_K(:,1:ny);
+
+% Get K gain for original state x
+Ks = full_K(:,ny+1:end);
+
+
+
+%% Description of design proccess
+
+%% LQR without integral action
+% First we calculated Nx and Nu based on the formulas provided in the
+% slides.
+
+% The weighting matrices Q and R where obtained after doing some research
+% on common starting points of Q and R which resulted in diagonal matrices.
+% After some trial and error we found some good values of Q and R.
+
+% We calculated the gain (K) of the system using dlqr.
+
+% The performance gives steady state errors.
+
+%% LQR with integral action
+
+% We first created the matrix representing the 3 integrators that
+% represents the error from the refernece signal for x, y and z position.
+% This
+
+% Then we designed the augmented system (we add a new state vector 
+% representing the error (y-r)).
+% This resulted in matrices NA and NB.
+
+% The Q and R started with diagonal matrices which gave good results after
+% some trial and error.
+
+% We calculated the gain (K) of the augmented system using dlqr.
+
+% The first 6 columns of K represents the gain (Ki) for the new state
+% vector.
+
+% The resting 12 columns of K represents the gain (Ks) for the original
+% vector x.
+
+
+%% Discussion of results
+% The LQR controller with integral action performs better since it
+% eliminates the steady state error (espessially for the z position)
+
+
+%% LQR Control (with payload)
+
+
+%% LQR Control (without integral action)
+
+% Compute matrices Nx and Nu
 
 
 big_A = [A-eye(nx,nx) B;
@@ -173,7 +292,7 @@ R = eye(nu,nu) * 0.001;
 [K, S, CLP] = dlqr(Ad,Bd,Q,R);
 
 
-%% QR Control (with integral action)
+%% LQR Control (with integral action)
 
 % Constructing the Augmented system
 
@@ -197,11 +316,12 @@ rank(ctrb(NA,NB))
 %%
 % Define LQR matrices Q and R
 Q = eye(nx+ny) * 0.01;
-Q(1,1) = 5;
-Q(2,2) = 5;
-Q(3,3) = 5;
+Q(1,1) = 1;
+Q(2,2) = 1;
+Q(3,3) = 1;
 
-R = eye(nu) * 0.0001;
+
+R = 0.1;
 
 % Compute K for augmented system
 [full_K, S, CLP] = dlqr(NA,NB,Q,R);
@@ -212,8 +332,28 @@ Ki = full_K(:,1:ny);
 % Get K gain for original state x
 Ks = full_K(:,ny+1:end);
 
+%% Discussion 0 vs 0.1 kg payload
+% For the system with integral action, there was no noticable difference 
+% detween 0 and 0.1 kg payload.
+
+% For the system without integral action, 
+% the steady state error of the z position increased from
+% -25 with 0 kg payload to -30 with 0.1 kg payload.
+% This makes sence since the payload is increasing the weight and
+% thus the quadcopter has to fight gravity more.
+
+% This shows system with integral action is more robust to outside 
+% disturbances (e.g the payload).
+
+% The fundamental difference between the fullstate feedback controller and 
+% the integral controller is that the integral controller adds integrators
+% and computes the input signal to the plant based on not just the 
+% difference of the state from the desired state but also uses the error 
+% of the output signal signal from the reference. This leads to 
+% elimination of steady state error.
 
 
+%% LQG Control
 
 
 
