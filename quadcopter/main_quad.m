@@ -344,27 +344,50 @@ L=Ad*M;
 
 %% 4.5 State feedback design via Pole Placement
 
-% Compute K for system
-G = rand(4,5);
+%% Compute K for system
 
-eig1 = [ -3 1; 
-        -1 -3];
-eig2 = [-2 -1; 
-         1 -2];
-eig_1 = -1;
+% damping ratio
+dr = 0.9;
 
-Lambda = blkdiag(eig1,eig2,eig_1);
+% settling time
+ts = 5;
+
+wn = 4.6/(dr*ts);
+
+% Dominant poles (since largest real part will dominate the system with e^-at)
+alpha = -dr*wn;
+beta = wn*sqrt(1-dr^2);
+
+dom_pos = [alpha beta
+         -beta alpha];
+
+dom_M = dom_pos;
+
+% Non dominant poles (place 5 to 10 farther away from imaginary axix as dominant)
+% n=12 -> 10 non dominant poles
+non_dom_poles = zeros(10,1);
+for k=1:10
+    new_val = 1.7*alpha - k*0.008 +0j;
+    non_dom_poles(k) = exp(new_val*Ts); % Convert from s-plane to 
+end
+
+Lambda = blkdiag(dom_M, diag(non_dom_poles));
+
+% Arbitrary matrix G
+G = rand(4,12);
 
 % Solve sylvester equation for MIMO systems
 X = lyap(Ad,-Lambda,-Bd*G);
-K = G/X;
+K = G/X
 
+fprintf("Poles of first system")
+eig(Ad-Bd*K)
 
-%% Compute L
+%% Compute L for estimator
 G_e = rand(6,1);
 eig1 = -2;
 
-Lambda_e = blkdiag(eig1);
+Lambda_e = blkdiag(good_poles = eig(Ad-Bd*K));
 
 % Solve sylvester equation for MIMO systems
 X1 = lyap(Ad',-Lambda_e,-Cd'*G_e);
