@@ -325,6 +325,9 @@ Rk = eye(ny);
 
 L=Ad*M;
 
+fprintf("Poles of system")
+eig(Ad-L*Cd)
+
 %% Discussion of Kalman Filter
 
 % 5.961 sec without payload - no kalman
@@ -384,16 +387,45 @@ fprintf("Poles of first system")
 eig(Ad-Bd*K)
 
 %% Compute L for estimator
-G_e = rand(6,1);
-eig1 = -2;
 
-Lambda_e = blkdiag(good_poles = eig(Ad-Bd*K));
+% damping ratio
+dr = 0.8;
+
+% settling time
+ts = 20;
+
+wn = 4.6/(dr*ts);
+
+% Dominant poles (since largest real part will dominate the system with e^-at)
+alpha = -dr*wn;
+beta = wn*sqrt(1-dr^2);
+
+dom_pos = [alpha beta
+         -beta alpha];
+
+dom_M = dom_pos;
+
+% Non dominant poles (place 5 to 10 farther away from imaginary axix as dominant)
+% n=12 -> 10 non dominant poles
+non_dom_poles = zeros(10,1);
+for k=1:10
+    new_val = 5*alpha - k*0.05 +0j;
+    non_dom_poles(k) = exp(new_val*Ts); % Convert from s-plane to 
+end
+
+% Arbitrary matrix G
+G_e = rand(6,12);
+
+Lambda_e = blkdiag(dom_M, diag(non_dom_poles));
 
 % Solve sylvester equation for MIMO systems
 X1 = lyap(Ad',-Lambda_e,-Cd'*G_e);
-L = (G_e/X1)';
+L = (G_e/X1)'
 
-% Alternative way to calculate L
+fprintf("Poles of system")
+eig(Ad-L*Cd)
+
+%% Alternative way to calculate L
 cl_poles = [-2,-3,-4,-5,-6,-7,-8,-9,-10, -11, -12, -13];
 L_alt = place(Ad',Cd',cl_poles)';
 
