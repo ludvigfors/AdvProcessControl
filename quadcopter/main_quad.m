@@ -445,7 +445,7 @@ G = rand(4,12);
 X = lyap(Ad,-Lambda,-Bd*G);
 K = G/X
 
-fprintf("Poles of first system")
+fprintf("Poles of controller system")
 eig(Ad-Bd*K)
 
 %%
