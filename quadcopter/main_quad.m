@@ -176,6 +176,10 @@ R = eye(nu,nu) * 0.0001;
 fprintf("Poles of system")
 eig(Ad-Bd*K)
 
+%% LQR Control (with payload)
+
+% Define the integrator gain Kint
+Kint = 5.5;
 
 %% LQR Control (with integral action)
 
@@ -186,8 +190,6 @@ eig(Ad-Bd*K)
 int_mat = [eye(3) zeros(3);
          zeros(3) zeros(3)];
 
-% Define the integrator gain Kint
-Kint = 6;
 
 % Create the augmented system (see slides on reference tracking)
 NA = [ int_mat Cd;
@@ -276,10 +278,6 @@ Ks = full_K(:,ny+1:end);
 % eliminates the steady state error (especially for the z position)
 
 
-%% LQR Control (with payload)
-
-% Define the integrator gain Kint
-Kint = 5.5;
 
 %% Discussion 0 vs 0.1 kg payload
 % For the system with integral action, there was no noticable difference 
@@ -356,7 +354,7 @@ eig(Ad-L*Cd)
 dr = 0.9;
 
 % settling time
-ts = 5;
+ts = 10;
 
 wn = 4.6/(dr*ts);
 
@@ -364,7 +362,7 @@ wn = 4.6/(dr*ts);
 alpha = -dr*wn;
 beta = wn*sqrt(1-dr^2);
 
-dom_pos = [alpha beta
+dom_M = [alpha beta
          -beta alpha];
 
 % DOES NOT WORK
@@ -449,6 +447,10 @@ K = G/X
 
 fprintf("Poles of first system")
 eig(Ad-Bd*K)
+
+%%
+cl_poles = [-2,-3,-4,-5,-6,-7,-8,-9,-10, -11, -12, -13];
+K = place(Ad',Bd,cl_poles);
 
 %% Compute L for estimator
 
