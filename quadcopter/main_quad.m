@@ -348,150 +348,88 @@ eig(Ad-L*Cd)
 
 %% 4.5 State feedback design via Pole Placement
 
-%% Compute K for system
+% damping ratio
+dr = 0.9;
+
+% settling time
+ts = 5;
+
+wn = 4.6/(dr*ts);
+
+alpha = -dr*wn;
+beta = wn*sqrt(1-dr^2);
+
+poles_desired = [alpha+beta*1j alpha-beta*1j alpha+beta*1j alpha-beta*1j];
+
+for k=1:2
+   poles_desired = [poles_desired (5+k)*alpha (5+k)*alpha];
+   poles_desired = [poles_desired (5+k)*alpha (5+k)*alpha];
+
+end
+
+% Compute K for system
+K = place(Ad,Bd,exp(Ts*poles_desired))
+
+fprintf("Poles of controller system")
+eig(Ad-Bd*K)
+
+% Compute L for estimator
+
+L = place(Ad',Cd', exp(Ts*10*poles_desired))'
+
+fprintf("Poles of estimator system")
+eig(Ad-L*Cd)
+
+
+%% Discussion on designing pole placement
+
+% We used the formulas provided in slides to calculate dominant poles 
+% by utilizing damping ratio and settling time.
+
+% For the controller:
+% We chose the non dominant poles 5 to 10 times faster than the dominant
+% poles to minimize their influence.
+% By trial and error we found out that having a higher multipliicty 
+% leads to a more stable system. 
+% We increased the damping of the non dominant poles by decreasing the
+% imaginary part. 
+
+% For the estimator:
+% We just placed the poles of the controller 10 times faster. 
+% Because the estimator needs to be faster in order to estimate the states.
+
+
+
+%% Backup
 
 % damping ratio
 dr = 0.9;
 
 % settling time
-ts = 10;
+ts = 5;
 
 wn = 4.6/(dr*ts);
 
-% Dominant poles (since largest real part will dominate the system with e^-at)
 alpha = -dr*wn;
 beta = wn*sqrt(1-dr^2);
 
-dom_M = [alpha beta
-         -beta alpha];
+poles_desired = [alpha+beta*1j alpha-beta*1j alpha+beta*1j alpha-beta*1j];
 
-% DOES NOT WORK
-% % Poles calculated from LQR
-% e1 = [-6.7560 0
-%        0 -6.756];
-% 
-% e2 = [-6.7560 0
-%        0 -6.7560];
-% 
-% e3 = [-2.0959 2.3026
-%        -2.3026 -2.0959];
-% 
-% e4 = [-2.0959 2.3026
-%        -2.3026 -2.0959];
-% 
-% e5 = [-2.0959 2.3026
-%        -2.3026 -2.0959];
-% 
-% e6 = [-2.0959 2.3026
-%        -2.3026 -2.0959];
-% 
-% e7 = [-1.0001 0
-%        0 -1.0001];
-% 
-% e8 = [-1.0001 0
-%        0 -1.0001];
-% 
-% e9 = [-0.6452 0.4650
-%        -0.4650 -0.6452];
-% 
-% e10 = [-0.6452 0.4650
-%        -0.4650 -0.6452];
-% 
-% 
-% e11 = [-0.5347 0.2981
-%        -0.2981 -0.5347];
-% 
-% 
-% e12 = [-0.5347 0.2981
-%        -0.2981 -0.5347];
-%  
-% 
-% % Convert to z-plane
-% e1 = exp(e1*Ts);
-% e2 = exp(e2*Ts);
-% e3 = exp(e3*Ts);
-% e4 = exp(e4*Ts);
-% e5 = exp(e5*Ts);
-% e6 = exp(e6*Ts);
-% e7 = exp(e7*Ts);
-% e8 = exp(e8*Ts);
-% e9 = exp(e9*Ts);
-% e10 = exp(e10*Ts);
-% e11 = exp(e11*Ts);
-% e12 = exp(e12*Ts);
+for k=1:2
+   poles_desired = [poles_desired (5+k)*alpha (5+k)*alpha];
+   poles_desired = [poles_desired (5+k)*alpha (5+k)*alpha];
 
-
-
-% Non dominant poles (place 5 to 10 farther away from imaginary axix as dominant)
-% n=12 -> 10 non dominant poles
-
-
-% This combined with dom_M above works
-non_dom_poles = zeros(10,1);
-for k=1:10
-    new_val = 1.7*alpha - k*0.008 +0j;
-    non_dom_poles(k) = exp(new_val*Ts); % Convert from s-plane to 
 end
 
-Lambda = blkdiag(dom_M, diag(non_dom_poles));
-
-% DOES NOT WORK
-%Lambda = blkdiag(e12,e11,e10,e9,e6,e5,e4,e3,e8(1,1),e7(1,1),e2(1,1),e1(1,1));
-
-% Arbitrary matrix G
-G = rand(4,12);
-
-% Solve sylvester equation for MIMO systems
-X = lyap(Ad,-Lambda,-Bd*G);
-K = G/X
+% Compute K for system
+K = place(Ad,Bd,exp(Ts*poles_desired))
 
 fprintf("Poles of controller system")
 eig(Ad-Bd*K)
 
-%%
-cl_poles = [-2,-3,-4,-5,-6,-7,-8,-9,-10, -11, -12, -13];
-K = place(Ad',Bd,cl_poles);
+% Compute L for estimator
 
-%% Compute L for estimator
+L = place(Ad',Cd', exp(Ts*10*poles_desired))'
 
-% damping ratio
-dr = 0.5;
-
-% settling time
-ts = 10;
-
-wn = 4.6/(dr*ts);
-
-% Dominant poles (since largest real part will dominate the system with e^-at)
-alpha = -dr*wn;
-beta = wn*sqrt(1-dr^2);
-
-dom_pos = [alpha beta
-         -beta alpha];
-
-dom_M = dom_pos;
-
-% Non dominant poles (place 5 to 10 farther away from imaginary axix as dominant)
-% n=12 -> 10 non dominant poles
-non_dom_poles = zeros(10,1);
-for k=1:10
-    new_val = 1.7*alpha - k*0.005 +0j
-    non_dom_poles(k) = exp(new_val*Ts); % Convert from s-plane to 
-end
-
-% Arbitrary matrix G
-G_e = rand(6,12);
-
-Lambda_e = blkdiag(dom_M, diag(non_dom_poles));
-
-% Solve sylvester equation for MIMO systems
-X1 = lyap(Ad',-Lambda_e,-Cd'*G_e);
-L = (G_e/X1)'
-
-fprintf("Poles of system")
+fprintf("Poles of estimator system")
 eig(Ad-L*Cd)
-
-%% Alternative way to calculate L
-cl_poles = [-2,-3,-4,-5,-6,-7,-8,-9,-10, -11, -12, -13];
-L_alt = place(Ad',Cd',cl_poles)';
-
