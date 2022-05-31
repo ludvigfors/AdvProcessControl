@@ -173,6 +173,9 @@ R = eye(nu,nu) * 0.0001;
 % Compute K for system
 [K, S, CLP] = dlqr(Ad,Bd,Q,R);
 
+fprintf("Poles of system")
+eig(Ad-Bd*K)
+
 
 %% LQR Control (with integral action)
 
@@ -364,10 +367,68 @@ beta = wn*sqrt(1-dr^2);
 dom_pos = [alpha beta
          -beta alpha];
 
-dom_M = dom_pos;
+% DOES NOT WORK
+% % Poles calculated from LQR
+% e1 = [-6.7560 0
+%        0 -6.756];
+% 
+% e2 = [-6.7560 0
+%        0 -6.7560];
+% 
+% e3 = [-2.0959 2.3026
+%        -2.3026 -2.0959];
+% 
+% e4 = [-2.0959 2.3026
+%        -2.3026 -2.0959];
+% 
+% e5 = [-2.0959 2.3026
+%        -2.3026 -2.0959];
+% 
+% e6 = [-2.0959 2.3026
+%        -2.3026 -2.0959];
+% 
+% e7 = [-1.0001 0
+%        0 -1.0001];
+% 
+% e8 = [-1.0001 0
+%        0 -1.0001];
+% 
+% e9 = [-0.6452 0.4650
+%        -0.4650 -0.6452];
+% 
+% e10 = [-0.6452 0.4650
+%        -0.4650 -0.6452];
+% 
+% 
+% e11 = [-0.5347 0.2981
+%        -0.2981 -0.5347];
+% 
+% 
+% e12 = [-0.5347 0.2981
+%        -0.2981 -0.5347];
+%  
+% 
+% % Convert to z-plane
+% e1 = exp(e1*Ts);
+% e2 = exp(e2*Ts);
+% e3 = exp(e3*Ts);
+% e4 = exp(e4*Ts);
+% e5 = exp(e5*Ts);
+% e6 = exp(e6*Ts);
+% e7 = exp(e7*Ts);
+% e8 = exp(e8*Ts);
+% e9 = exp(e9*Ts);
+% e10 = exp(e10*Ts);
+% e11 = exp(e11*Ts);
+% e12 = exp(e12*Ts);
+
+
 
 % Non dominant poles (place 5 to 10 farther away from imaginary axix as dominant)
 % n=12 -> 10 non dominant poles
+
+
+% This combined with dom_M above works
 non_dom_poles = zeros(10,1);
 for k=1:10
     new_val = 1.7*alpha - k*0.008 +0j;
@@ -375,6 +436,9 @@ for k=1:10
 end
 
 Lambda = blkdiag(dom_M, diag(non_dom_poles));
+
+% DOES NOT WORK
+%Lambda = blkdiag(e12,e11,e10,e9,e6,e5,e4,e3,e8(1,1),e7(1,1),e2(1,1),e1(1,1));
 
 % Arbitrary matrix G
 G = rand(4,12);
@@ -389,10 +453,10 @@ eig(Ad-Bd*K)
 %% Compute L for estimator
 
 % damping ratio
-dr = 0.8;
+dr = 0.5;
 
 % settling time
-ts = 20;
+ts = 10;
 
 wn = 4.6/(dr*ts);
 
@@ -409,7 +473,7 @@ dom_M = dom_pos;
 % n=12 -> 10 non dominant poles
 non_dom_poles = zeros(10,1);
 for k=1:10
-    new_val = 5*alpha - k*0.05 +0j;
+    new_val = 1.7*alpha - k*0.005 +0j
     non_dom_poles(k) = exp(new_val*Ts); % Convert from s-plane to 
 end
 
