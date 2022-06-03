@@ -63,21 +63,10 @@ D = zeros(6,4);
 Ts = 0.05;
 
 %% Discretization using zero on hold (A not invertable -> pseudo inverse)
-Az = expm(A*Ts);
-Bz = pinv(A)*(expm(A*Ts) - eye(12))*B;
-Cz = C;
-Dz = D;
-
-% G_DT_3 = tf(ss(Az,Bz,Cz,Dz,Ts))
-
-% Alternatively (shortcut)
-% G_DT_4 = c2d(G,Ts,"zoh")
-
-Ad = Az;
-Bd = Bz;
-Cd = Cz;
-Dd = Dz;
-
+Ad = expm(A*Ts);
+Bd = pinv(A)*(expm(A*Ts) - eye(12))*B;
+Cd = C;
+Dd = D;
 
 %% Plot step response
 sys_c = ss(A,B,C,D);
@@ -144,15 +133,10 @@ r1(3)= 1;
 
 %% 4.3 LQR Control
 
-%% LQR Control (without payload)
 
 %% LQR Control (without integral action)
 
 % Compute matrices Nx and Nu
-
-% Nx maps steady state y to x
-% Nu maps steady state y to u
-
 
 big_A = [Ad-eye(nx,nx) Bd;
          Cd Dd];
@@ -166,9 +150,12 @@ Nx = big_N(1:nx,:);
 Nu = big_N(nx+1:end,:);
 
 % Define LQR matrices Q and R
-Q = eye(nx,nx) * 0.001;
+Q = eye(nx,nx);
+Q(1,1) = 5;
+Q(2,2) = 5;
+Q(3,3) = 2e6;
 
-R = eye(nu,nu) * 0.0001;
+R = eye(nu,nu) * 1e-1;
 
 % Compute K for system
 [K, S, CLP] = dlqr(Ad,Bd,Q,R);
@@ -176,12 +163,12 @@ R = eye(nu,nu) * 0.0001;
 fprintf("Poles of system")
 eig(Ad-Bd*K)
 
-%% LQR Control (with payload)
+
+%% LQR Control (with integral action)
 
 % Define the integrator gain Kint
 Kint = 5.5;
 
-%% LQR Control (with integral action)
 
 % Constructing the Augmented system
 
@@ -239,8 +226,6 @@ Ks = full_K(:,ny+1:end);
 
 % We calculated the gain (K) of the system using dlqr.
 
-% The performance gives steady state errors.
-
 %% LQR with integral action
 
 % We first created the matrix representing the 3 integrators that
@@ -274,12 +259,10 @@ Ks = full_K(:,ny+1:end);
 
 
 %% Discussion of results
-% The LQR controller with integral action performs better since it
-% eliminates the steady state error (especially for the z position)
+% The LQR controller without integral action is faster.
 
 
-
-%% Discussion 0 vs 0.1 kg payload
+%% Discussion 0 vs 0.1 kg payload OUTDATED
 % For the system with integral action, there was no noticable difference 
 % detween 0 and 0.1 kg payload.
 
@@ -317,14 +300,14 @@ V_var = [2.5e-5;
 
 B1 = eye(nx);
 
+% Covariance matrix for process noise
 Qk = eye(nx);
 Qk(6,6) = 500; % Increase some priority for Vz.
 
+% Covariance matrix for measurement noise
 Rk = eye(ny);
 
-[M,P] = dlqe(Ad,B1,Cd,Qk,Rk);
-
-L=Ad*M;
+[L,P] = dlqe(Ad,B1,Cd,Qk,Rk);
 
 fprintf("Poles of system")
 eig(Ad-L*Cd)
