@@ -6,7 +6,7 @@ clc
 %% Load data
 load references_09.mat
 
-% given parameters of the quadcopter model
+% Given parameters of the quadcopter model
 m = 0.5;
 L = 0.25;
 k = 3e-6;
@@ -25,13 +25,11 @@ equi = [k*cm/m k*cm/m k*cm/m k*cm/m;
     0 1 0 -1;
     1 -1 1 -1];
 
-disp("input value $v^2$ for the rotors in equilibrium state")
+disp("input value v^2 for the rotors in equilibrium state")
 u = equi\[g 0 0 0]'
 
 disp("The equilibrium states are 0.")
 
-% phi theta psi
-% omega_x omega_y omega_z
 phi = 0;
 theta = 0;
 psi = 0;
@@ -39,7 +37,6 @@ omega_x = 0;
 omega_y = 0;
 omega_z = 0;
 
-%[x y z vx vy vz φ θ ψ ωx ωy ωz ]
 
 jacobian = [0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0;
             0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0;
@@ -68,7 +65,8 @@ Bd = pinv(A)*(expm(A*Ts) - eye(12))*B;
 Cd = C;
 Dd = D;
 
-%% Plot step response
+
+%% Plot step response (Verify discrete model)
 sys_c = ss(A,B,C,D);
 sys_d = ss(Ad,Bd,Cd,Dd,Ts);
 
@@ -123,13 +121,6 @@ nu = 4;
 ny = 6;
 
 
-%% Setpoint
-r0 = zeros(ny,1);
-r1 = r0;
-r1(1) = 1;
-r1(2) = 1;
-r1(3)= 1;
-
 
 %% 4.3 LQR Control
 
@@ -168,7 +159,6 @@ eig(Ad-Bd*K)
 
 % Define the integrator gain Kint
 Kint = 5.5;
-
 
 % Constructing the Augmented system
 
@@ -213,82 +203,6 @@ Ki = full_K(:,1:ny);
 Ks = full_K(:,ny+1:end);
 
 
-
-%% Description of design proccess
-
-%% LQR without integral action
-% First we calculated Nx and Nu based on the formulas provided in the
-% slides.
-
-% The weighting matrices Q and R where obtained after doing some research
-% on common starting points of Q and R which resulted in diagonal matrices.
-% After some trial and error we fitting values for Q and R.
-
-% We calculated the gain (K) of the system using dlqr.
-
-%% LQR with integral action
-
-% We first created the matrix representing the 3 integrators that
-% represents the error from the refernece signal for x, y and z position.
-% This
-
-% Then we designed the augmented system (we add a new state vector 
-% representing the error (y-r)).
-% This resulted in matrices NA and NB.
-
-% The Q and R started with diagonal matrices. 
-% We relilzed that it is harder for the quadcopter to in x and y direction than
-% in the z direction (since the quadcopter only has to increase or decrease 
-% the speed of the motors to change z position). 
-% So we gave the integrators for x and y position higher values in Q than z positions.
-% We also relized after some trial and error that the values for the 
-% angular velocities had to be set to some higher values (we set them to 10).
-% The R values we set to 0.01.
-
-% These values gave decent results. However, the system was still too slow.
-% So we increased the integrator gain from 1 to 6 which increased
-% performace significantly.
-
-% We calculated the gain (K) of the augmented system using dlqr.
-
-% The first 6 columns of K represents the gain (Ki) for the new state
-% vector.
-
-% The resting 12 columns of K represents the gain (Ks) for the original
-% vector x.
-
-
-%% Discussion of results
-% The LQR controller without integral action is faster.
-
-
-%% Discussion 0 vs 0.1 kg payload OUTDATED
-% For the system with integral action, there was no noticable difference 
-% detween 0 and 0.1 kg payload.
-
-% For the system without integral action, 
-% the steady state error of the z position increased from
-% -25 with 0 kg payload to -30 with 0.1 kg payload.
-% This makes sence since the payload is increasing the weight and
-% thus the quadcopter has to fight gravity more.
-
-% For the system with integral action, the system became unstable.
-% however if we decrased the integrator gain from 6 to 5.5, it worked
-% better.
-
-% The system without integral action seems to be more robust to outside 
-% disturbances (e.g the payload). If we have increased disturbance for the
-% system with integral action, the integrator gain has to be decreased
-% which makes the system slower (but more robust to disturbances).
-
-% The fundamental difference between the fullstate feedback controller and 
-% the integral controller is that the integral controller adds integrators
-% and computes the input signal to the plant based on not just the 
-% difference of the state from the desired state but also uses the error 
-% of the output signal signal from the reference. This leads to 
-% elimination of steady state error.
-
-
 %% 4.4 LQG Control
 
 V_var = [2.5e-5;
@@ -312,78 +226,8 @@ Rk = eye(ny);
 fprintf("Poles of system")
 eig(Ad-L*Cd)
 
-%% Discussion of Kalman Filter
-
-% 5.961 sec without payload - no kalman
-% 6.128 sec without payload - kalman
-
-% Adding a kalman filter increases the avergage time a 
-% little bit but the system becomes more robust to noise.
-% Both systems clear all checkpoints.
-
-
-
-% 5.972 sec with payload - no kalman
-% 6.136 ith payload - kalman
-
-% No real difference in performance when adding payload.
-
 
 %% 4.5 State feedback design via Pole Placement
-
-% damping ratio
-dr = 0.9;
-
-% settling time
-ts = 5;
-
-wn = 4.6/(dr*ts);
-
-alpha = -dr*wn;
-beta = wn*sqrt(1-dr^2);
-
-poles_desired = [alpha+beta*1j alpha-beta*1j alpha+beta*1j alpha-beta*1j];
-
-for k=1:2
-   poles_desired = [poles_desired (5+k)*alpha (5+k)*alpha];
-   poles_desired = [poles_desired (5+k)*alpha (5+k)*alpha];
-
-end
-
-% Compute K for system
-K = place(Ad,Bd,exp(Ts*poles_desired))
-
-fprintf("Poles of controller system")
-eig(Ad-Bd*K)
-
-% Compute L for estimator
-
-L = place(Ad',Cd', exp(Ts*10*poles_desired))'
-
-fprintf("Poles of estimator system")
-eig(Ad-L*Cd)
-
-
-%% Discussion on designing pole placement
-
-% We used the formulas provided in slides to calculate dominant poles 
-% by utilizing damping ratio and settling time.
-
-% For the controller:
-% We chose the non dominant poles 5 to 10 times faster than the dominant
-% poles to minimize their influence.
-% By trial and error we found out that having a higher multipliicty 
-% leads to a more stable system. 
-% We increased the damping of the non dominant poles by decreasing the
-% imaginary part. 
-
-% For the estimator:
-% We just placed the poles of the controller 10 times faster. 
-% Because the estimator needs to be faster in order to estimate the states.
-
-
-
-%% Backup
 
 % damping ratio
 dr = 0.9;
