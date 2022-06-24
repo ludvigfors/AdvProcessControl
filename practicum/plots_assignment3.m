@@ -12,13 +12,14 @@ K = K_temp;
 figure("Name","Comparison between simple and realistic model")
 subplot(2,1,1)
 hold on, grid on
-title("Position $x $ [m] of the cart ","Interpreter","latex")
+ylabel("Position $x $ [m]","Interpreter","latex")
 yline(0.1,"--",'DisplayName',"Set point")
 
 legend("location","southeast")
 subplot(2,1,2)
 hold on, grid on
-title("Angle $\alpha $ [rad] of the rod ","Interpreter","latex")
+ylabel("Angle $\alpha $ [rad] ","Interpreter","latex")
+xlabel("Time [s]","Interpreter","latex")
 yline(0,"--",'DisplayName',"Set point")
 subplot(2,1,1)
 plot(simout.Time,simout.Data(:,1),'DisplayName',"Simple model")  
@@ -39,7 +40,8 @@ K = K_temp;
 
 figure("Name","Optimal Q and R values")
 hold on, grid on
-title("Magnitude of the control signal $u $ [V]","Interpreter","latex")
+ylabel("Control signal $u $ [V]","Interpreter","latex")
+xlabel("Time [s]","Interpreter","latex")
 legend("location","southeast")
 ylim([-2,2])
 
@@ -60,13 +62,14 @@ Q_alt(1,1) = 1.25;
 figure("Name","Comparison of optimized and retuned model")
 subplot(2,1,1)
 hold on, grid on
-title("Position $x $ [m] of the cart ","Interpreter","latex")
+ylabel("Position $x $ [m]","Interpreter","latex")
 yline(0.1,"--",'DisplayName',"Set point")
 
 legend("location","southeast")
 subplot(2,1,2)
 hold on, grid on
-title("Angle $\alpha $ [rad] of the rod ","Interpreter","latex")
+ylabel("Angle $\alpha $ [rad] ","Interpreter","latex")
+xlabel("Time [s]","Interpreter","latex")
 yline(0,"--",'DisplayName',"Set point")
 subplot(2,1,1)
 plot(out_old.real_simout.Time,out_old.real_simout.Data(:,1),'DisplayName',"Q(1,1) = 1.25") 
@@ -97,13 +100,14 @@ figure("Name","Effect of varying wc")
 
 subplot(2,1,1)
 hold on, grid on
-title("Position $x $ [m] of the cart ","Interpreter","latex")
+ylabel("Position $x $ [m]","Interpreter","latex")
 yline(0.1,"--",'DisplayName',"Set point")
 ylim([-0.02 0.12])
 legend("location","southeast")
 subplot(2,1,2)
 hold on, grid on
-title("Angle $\alpha $ [rad] of the rod ","Interpreter","latex")
+ylabel("Angle $\alpha $ [rad] ","Interpreter","latex")
+xlabel("Time [s]","Interpreter","latex")
 yline(0,"--",'DisplayName',"Set point")
 ylim([-0.03 0.05])
 for i=1:length(wcs)

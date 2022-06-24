@@ -62,6 +62,8 @@ D = zeros(6,4);
 
 Ts = 0.05;
 
+u_equi = [40.875; 40.875; 40.875; 40.875];
+
 %% Discretization using zero on hold (A not invertable -> pseudo inverse)
 Az = expm(A*Ts);
 Bz = pinv(A)*(expm(A*Ts) - eye(12))*B;
@@ -126,12 +128,7 @@ rank(O_M)
 
 %% Define variables
 
-%number of states     
-nx = 12;
-%number of inputs
-nu = 4;
-%number of outputs
-ny = 6;
+
 
 
 %% Setpoint
@@ -144,16 +141,14 @@ r1(3)= 1;
 
 %% 4.3 LQR Control
 
-%% LQR Control (without payload)
+%% LQR Control (without payload) old with full
 
-%% LQR Control (without integral action)
-
-% Compute matrices Nx and Nu
-
-% Nx maps steady state y to x
-% Nu maps steady state y to u
-
-
+%number of states     
+nx = 12;
+%number of inputs
+nu = 4;
+%number of outputs
+ny = 6;
 big_A = [Ad-eye(nx,nx) Bd;
          Cd Dd];
 
@@ -165,21 +160,44 @@ big_N = big_A \ big_Y;
 Nx = big_N(1:nx,:);
 Nu = big_N(nx+1:end,:);
 
-% Define LQR matrices Q and R
-Q = eye(nx,nx) * 0.001;
+%% LQR Control (without integral action)
 
-R = eye(nu,nu) * 0.0001;
+% Compute matrices Nx and Nu
+
+% Nx maps steady state y to x
+% Nu maps steady state y to u
+ny = 3;
+big_A = [Ad-eye(nx,nx) Bd;
+         Cd(1:3,:) Dd(1:3,:)];
+
+big_Y = [zeros(nx,ny);
+         eye(ny,ny)];
+
+big_N = big_A \ big_Y;
+
+Nx = big_N(1:nx,:);
+Nu = big_N(nx+1:end,:);
+
+%% 
+
+% Define LQR matrices Q and R
+Q = eye(nx,nx);
+Q(1,1) = 5;
+Q(2,2) = 5;
+Q(3,3) = 2e6;
+
+R = eye(nu,nu) * 1e-1;
 
 % Compute K for system
-[K, S, CLP] = dlqr(Ad,Bd,Q,R);
+[K, ~, ~] = dlqr(Ad,Bd,Q,R);
 
 fprintf("Poles of system")
-eig(Ad-Bd*K)
+log(eig(Ad-Bd*K))/Ts
 
 %% LQR Control (with payload)
 
 % Define the integrator gain Kint
-Kint = 5.5;
+Kint = 1;
 
 %% LQR Control (with integral action)
 
@@ -198,6 +216,12 @@ NA = [ int_mat Cd;
 NB = [ Dd
        Bd];
 
+NA = [ eye(3) Cd(1:3,:);
+       zeros(nx,ny-3) Ad];
+
+NB = [ Dd(1:3,:)
+       Bd];
+
 %checking the controlabillity of the Augmented system
 disp('Rank of the controllability matrix of the augmented system:');
 rank(ctrb(NA,NB))
@@ -205,27 +229,35 @@ rank(ctrb(NA,NB))
 
 %%
 % Define LQR matrices Q and R
-Q = eye(nx+ny);
-Q(1,1) = 500;
-Q(2,2) = 500;
-Q(3,3) = 10;
-Q(16,16) = 10;
-Q(17,17) = 10;
-Q(18,18) = 10;
+Q = eye(nx+ny-3);
+% Q(1,1) = 500;
+% Q(2,2) = 500;
+% Q(3,3) = 10;
+% Q(16,16) = 10;
+% Q(17,17) = 10;
+% Q(18,18) = 10;
+% Q(1,1) = 100;
+% Q(2,2) = 100;
+% Q(3,3) = 40e6;
+Q(1,1) = 1e-1;
+Q(2,2) = 1e-1;
+Q(3,3) = 1e1;
+Q(4:9,4:9) = zeros(6,6);
+Q(13:15,13:15) = zeros(3,3);
 
 
-R = eye(nu) * 0.01;
+R = eye(nu)*2e-1;
 
 % Compute K for augmented system
 [full_K, S, CLP] = dlqr(NA,NB,Q,R);
 
 % Get K gain for the augmented state vector (y-r error)
-Ki = full_K(:,1:ny);
+Ki = full_K(:,1:ny-3);
 
 % Get K gain for original state x
-Ks = full_K(:,ny+1:end);
+Ks = full_K(:,ny-3+1:end);
 
-
+eig(NA-NB*full_K)
 
 %% Description of design proccess
 
@@ -317,14 +349,17 @@ V_var = [2.5e-5;
 
 B1 = eye(nx);
 
-Qk = eye(nx);
-Qk(6,6) = 500; % Increase some priority for Vz.
+% Qk = eye(nx);
+Qk = eye(nx)*1e-1;
+Qk(4:6,4:6) = eye(3,3)*3e-1;
+Qk(6,6) = 1e-0; % Increase some priority for Vz.
 
-Rk = eye(ny);
+% Rk = eye(ny);
+Rk = diag(V_var)*1e4;
 
 [M,P] = dlqe(Ad,B1,Cd,Qk,Rk);
 
-L=Ad*M;
+L=M;
 
 fprintf("Poles of system")
 eig(Ad-L*Cd)
@@ -349,10 +384,10 @@ eig(Ad-L*Cd)
 %% 4.5 State feedback design via Pole Placement
 
 % damping ratio
-dr = 0.9;
+dr = 0.7;
 
 % settling time
-ts = 5;
+ts =6;
 
 wn = 4.6/(dr*ts);
 
@@ -375,7 +410,7 @@ eig(Ad-Bd*K)
 
 % Compute L for estimator
 
-L = place(Ad',Cd', exp(Ts*10*poles_desired))'
+L = place(Ad',Cd', exp(Ts*3*poles_desired))'
 
 fprintf("Poles of estimator system")
 eig(Ad-L*Cd)
@@ -403,10 +438,10 @@ eig(Ad-L*Cd)
 %% Backup
 
 % damping ratio
-dr = 0.9;
+dr = 0.7;
 
 % settling time
-ts = 5;
+ts = 7;
 
 wn = 4.6/(dr*ts);
 
@@ -429,7 +464,7 @@ eig(Ad-Bd*K)
 
 % Compute L for estimator
 
-L = place(Ad',Cd', exp(Ts*10*poles_desired))'
+L = place(Ad',Cd', exp(Ts*5*poles_desired))'
 
 fprintf("Poles of estimator system")
 eig(Ad-L*Cd)
